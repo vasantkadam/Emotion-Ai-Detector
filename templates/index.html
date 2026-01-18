@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotion AI Detector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="app">
+    <div class="top-bar">
+      <h1>Emotion AI Detector</h1>
+      <button id="themeToggle" class="theme-toggle">🌙</button>
+    </div>
+
+    <div class="card">
+      <div class="header">
+        <p>Type a sentence and the AI will detect the emotion 🎯</p>
+      </div>
+
+      <form method="POST" id="emotionForm">
+        <textarea name="text" placeholder="Type your text here..." required></textarea>
+
+        <div class="buttons">
+          <button type="submit" class="btn">
+            Detect Emotion <span class="arrow">→</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Detecting emotion...</p>
+      </div>
+
+      {% if result %}
+      <div class="result">
+        <h2>Result</h2>
+
+        <div class="emotion-box">
+          <div class="emotion-icon animated-emoji">
+            {% if result.emotion == "Happy" %}
+              😄
+            {% elif result.emotion == "Sad" %}
+              😢
+            {% elif result.emotion == "Angry" %}
+              😠
+            {% elif result.emotion == "Fear" %}
+              😨
+            {% elif result.emotion == "Excited" %}
+              🤩
+            {% else %}
+              😐
+            {% endif %}
+          </div>
+
+          <span class="emotion-badge">{{ result.emotion }}</span>
+          <p><b>Confidence:</b> {{ result.confidence }}</p>
+          <p><b>Text:</b> {{ result.text }}</p>
+
+          <button class="copy-btn" id="copyBtn">Copy Result</button>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if history %}
+      <div class="history">
+        <h3>History (Last 5)</h3>
+        {% for h in history %}
+          <div class="history-item">
+            <p><b>{{ h.text }}</b></p>
+            <p>{{ h.emotion }} • {{ h.confidence }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="chart-card">
+        <h3>Emotion Distribution</h3>
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Built with <span>DistilBERT</span> & <span>Flask</span></p>
+    </div>
+  </div>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // Theme Toggle
+    const themeToggle = document.getElementById("themeToggle");
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      themeToggle.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+    });
+
+    // Loading Spinner
+    const form = document.getElementById("emotionForm");
+    const loading = document.getElementById("loading");
+    form.addEventListener("submit", () => {
+      loading.style.display = "flex";
+    });
+
+    // Copy Result Button
+    const copyBtn = document.getElementById("copyBtn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => {
+        const resultText = `Emotion: {{ result.emotion }}\nConfidence: {{ result.confidence }}\nText: {{ result.text }}`;
+        navigator.clipboard.writeText(resultText);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => copyBtn.textContent = "Copy Result", 1500);
+      });
+    }
+
+    // Chart
+    const chartData = {{ chart_data | safe }};
+    const ctx = document.getElementById("chart").getContext("2d");
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: chartData.labels,
+        datasets: [{
+          label: "Emotion Count",
+          data: chartData.counts
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+        }
+      }
+    });
+  </script>
+</body>
+</html>
